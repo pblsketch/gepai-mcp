@@ -37,12 +37,16 @@ await Promise.all([
 const tools = await client.listTools();
 const toolNames = tools.tools.map((t) => t.name).sort();
 check(
-  'tools: 4개 등록',
-  toolNames.length === 4 &&
+  'tools: 8개 등록',
+  toolNames.length === 8 &&
     JSON.stringify(toolNames) ===
       JSON.stringify([
+        'explore_topics',
+        'get_document_text',
         'get_resource_detail',
         'map_standard_to_resources',
+        'related_resources',
+        'search_fulltext',
         'search_resources',
         'search_standards',
       ]),
@@ -122,6 +126,69 @@ check(
   'map_standard_to_resources: 괄호 포함 코드 정규화 + 결과',
   mappedJson.code === linkedCode,
   JSON.stringify({ code: mappedJson.code, total: mappedJson.totalLinkedResources })
+);
+
+// 7.5 원문 전문 검색 + 문서 읽기 + 탐색 + 추천
+const ft = await client.callTool({
+  name: 'search_fulltext',
+  arguments: { query: '탄소발자국 계산', limit: 5 },
+});
+const ftJson = JSON.parse(firstText(ft));
+check(
+  'search_fulltext: "탄소발자국 계산" 결과 존재',
+  ftJson.showing > 0 && ftJson.items[0].excerpt.length > 50,
+  `totalChunks=${ftJson.totalMatchingChunks}`
+);
+
+const ftDocId = ftJson.items[0].documentId;
+const docText = await client.callTool({
+  name: 'get_document_text',
+  arguments: { document_id: ftDocId, count: 2 },
+});
+const docJson = JSON.parse(firstText(docText));
+check(
+  'get_document_text: 문서 메타 + 본문 반환',
+  docJson.document?.id === ftDocId &&
+    docJson.parts.length > 0 &&
+    docJson.parts[0].text.length > 50,
+  `totalChunks=${docJson.totalChunks}`
+);
+
+const topics = await client.callTool({ name: 'explore_topics', arguments: {} });
+const topicsJson = JSON.parse(firstText(topics));
+check(
+  'explore_topics: 전체 주제 목록',
+  Array.isArray(topicsJson.topics) && topicsJson.topics.length > 5,
+  `topics=${topicsJson.topics?.length}`
+);
+
+const oneTopic = await client.callTool({
+  name: 'explore_topics',
+  arguments: { topic: '자원순환' },
+});
+const oneTopicJson = JSON.parse(firstText(oneTopic));
+check(
+  'explore_topics: "자원순환" 상세 (관련주제·성취기준 포함)',
+  oneTopicJson.matched?.documents > 0 && oneTopicJson.topStandards?.length > 0,
+  JSON.stringify(oneTopicJson.matched)
+);
+
+const rel = await client.callTool({
+  name: 'related_resources',
+  arguments: { document_id: ftDocId, limit: 5 },
+});
+const relJson = JSON.parse(firstText(rel));
+check(
+  'related_resources: 근거 있는 추천 반환',
+  relJson.items?.length > 0 && relJson.items[0].why?.length > 0,
+  `items=${relJson.items?.length}`
+);
+
+// 상세 조회에 sourceGuide 포함 확인
+check(
+  'get_resource_detail: sourceGuide 포함',
+  detailJson.sourceGuide?.findOriginal?.includes('교육청'),
+  JSON.stringify(detailJson.sourceGuide ?? null).slice(0, 80)
 );
 
 // 8. 프롬프트

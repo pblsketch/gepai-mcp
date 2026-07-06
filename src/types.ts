@@ -18,6 +18,33 @@ export interface StandardRef {
   text: string;
 }
 
+/** 원문 문서 (실서비스 RAG에서 AI 강화된 PDF 단위 카탈로그) */
+export interface Doc {
+  id: number;
+  uuid: string;
+  fileName: string;
+  filePath: string;
+  /** 시도교육청/지역 (정규화됨, "전국" 포함) */
+  region: string;
+  schoolLevel: string;
+  grade?: string;
+  subjects: string[];
+  envTopics: string[];
+  sdgs: string[];
+  competencies: string[];
+  methods: string[];
+  resourceType: string;
+  activityType: string;
+  location: string;
+  /** AI 생성 시맨틱 키워드 */
+  keywords: string[];
+  standards: StandardRef[];
+  /** 원문 PDF의 GCS 경로 (공개 URL 아님) */
+  gcsUri: string;
+  /** 연결된 정선 카탈로그 자료 id */
+  resourceIds: number[];
+}
+
 /** 교육부 자원맵 환경교육 자료 */
 export interface Resource {
   id: number;

@@ -12,6 +12,7 @@
 |---|---|---|
 | 성취기준 DB | 3,285건 | 2022 개정 교육과정 초·중·고 전 과목 성취기준 |
 | 환경교육 자료 카탈로그 | 933건 | 전국 12개 시도교육청 자료 (교육부 자원맵) — 학교급·과목·환경주제·SDGs·성취기준 매핑 포함 |
+| **원문 문서 카탈로그 + 전문 텍스트** | 1,113건 / 22,341청크 | 교육청 자료 PDF 원문 텍스트 — 본문 전문 검색(BM25) 및 문서 읽기 지원 |
 | 배움의 수레바퀴 모형 | — | 이재영 교수의 환경교육 학습 모형 (4단계 + 4연결고리) |
 | 수업 설계 절차 | — | GEP-AI 실서비스에서 검증된 9단계 설계 프롬프트 |
 
@@ -36,7 +37,15 @@
 - 필드: `office`, `collection`(자료집), `title`(활동명), `materialType`, `activityTypes`, `schoolLevels`, `hours`(차시), `subjects`, `competencies`(환경교육역량), `place`, `envTopics`, `sdgs`, `methods`(교수학습방법), `standards[{code, text}]`
 - 자료 **원문 파일은 포함되지 않습니다** — 메타데이터로 검색·추천하고 출처(교육청·자료집명)를 안내합니다.
 
-**③ 배움의 수레바퀴 모형** — 4단계·4연결고리 정의, 단계별 예시 활동, 차시 수별 권장 구성 (`gepai://learning-wheel` 리소스로도 제공)
+**③ 원문 문서 카탈로그 + 전문 텍스트** (`documents.json` 1,113건 + `chunks.jsonl.br` 22,341청크)
+
+- 출처: GEP-AI 실서비스 RAG 파이프라인 — 교육청 자료 PDF 1,113건을 문서 단위로 AI 메타데이터 강화(지역·학교급·과목·환경주제·SDGs·역량·교수법·시맨틱 키워드) 후 본문을 청크로 추출
+- 지역: 14개 (경기 249 · 충북 144 · 서울 125 · 광주 98 등, "전국" 포함)
+- 본문 텍스트: 청크 22,341건 (평균 686자, brotli 압축 7.7MB 내장) — `search_fulltext`로 본문 검색, `get_document_text`로 이어 읽기
+- 정선 카탈로그(②)와 파일명 기준 742건 자동 연결 — 자료 상세에서 원문 텍스트로 바로 이동
+- 필드: `fileName`, `region`, `schoolLevel`, `subjects`, `envTopics`, `sdgs`, `competencies`, `methods`, `resourceType`, `activityType`, `keywords`(AI 생성), `standards`, `resourceIds`
+
+**④ 배움의 수레바퀴 모형** — 4단계·4연결고리 정의, 단계별 예시 활동, 차시 수별 권장 구성 (`gepai://learning-wheel` 리소스로도 제공)
 
 ## 도구 (Tools)
 
@@ -44,8 +53,12 @@
 |---|---|
 | `search_standards` | 성취기준 검색 (키워드·학교급·과목·학년군·코드) |
 | `search_resources` | 환경교육 자료 검색 (키워드·학교급·과목·환경주제·SDGs·교육청) |
-| `get_resource_detail` | 자료 상세 + 연계 성취기준 전문 |
+| `get_resource_detail` | 자료 상세 + 연계 성취기준 전문 + 원문 찾기 안내(sourceGuide) |
 | `map_standard_to_resources` | 성취기준 코드 → 연계 자료 목록 |
+| `search_fulltext` | **자료 원문 본문 검색** — 활동 방법·실험 절차·사례를 PDF 본문 텍스트에서 직접 검색 (BM25) |
+| `get_document_text` | 원문 문서 읽기 — 검색으로 찾은 문서의 본문을 청크 단위로 이어 읽기 |
+| `explore_topics` | 환경주제 지도 탐색 — 주제별 자료 수, 관련 주제·SDGs·성취기준·키워드 (몰랐던 자료 발견) |
+| `related_resources` | 유사 자료 추천 — 공유 성취기준·주제·과목 근거 제시 |
 
 ## 프롬프트 (Prompts)
 
@@ -192,7 +205,8 @@ src/prompts/     수업 설계 절차 프롬프트
 
 - [x] npm 패키지 배포 (`npx gepai-mcp`) — [gepai-mcp@0.1.0](https://www.npmjs.com/package/gepai-mcp)
 - [ ] 원격 MCP 배포 (Cloudflare Workers) — 교사가 URL 등록만으로 사용
-- [ ] 자료 원문 PDF 심층 검색 (사전 임베딩 + 로컬 벡터 검색)
+- [x] 자료 원문 심층 검색 — v0.3.0: 원문 22,341청크 내장 BM25 전문 검색 (임베딩 불필요, 의미 재랭킹은 호출하는 AI가 수행)
+- [ ] 자료 원본 파일 링크 확보 (교육청 자료실 URL 수집 또는 공개 버킷 호스팅 — 저작권 확인 후)
 - [ ] 플랫폼별 설치 가이드 (스크린샷 포함)
 
 ---

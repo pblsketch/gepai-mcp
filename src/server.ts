@@ -6,7 +6,12 @@ import {
   STANDARD_BY_CODE,
   RESOURCES,
   STANDARDS,
+  DOCUMENTS,
+  DOC_BY_ID,
+  DOCS_BY_RESOURCE,
 } from './data.js';
+import { searchFulltext, getDocumentChunks } from './fulltext.js';
+import { listTopics, exploreTopic, relatedItems } from './discovery.js';
 import { searchResources, searchStandards } from './search.js';
 import { renderWheelMarkdown } from './learning-wheel.js';
 import { buildDesignLessonPrompt } from './prompts/design-lesson.js';
@@ -17,7 +22,7 @@ import { buildReflectLessonPrompt } from './prompts/reflect-lesson.js';
 import { buildLessonBriefPrompt } from './prompts/lesson-brief.js';
 import type { Resource } from './types.js';
 
-export const SERVER_VERSION = '0.2.0';
+export const SERVER_VERSION = '0.3.0';
 
 const SCHOOL_LEVELS = ['유치원', '초등학교', '중학교', '고등학교'] as const;
 
@@ -197,6 +202,8 @@ export function createServer(): McpServer {
           error: `id ${id} 자료를 찾을 수 없습니다 (유효 범위: 1~${RESOURCES.length}).`,
         });
       }
+      const linkedDocs = DOCS_BY_RESOURCE.get(id) ?? [];
+      const searchQuery = `${r.office}교육청 ${r.collection}`;
       return jsonResult({
         ...r,
         standards: r.standards.map((ref) => {
@@ -214,6 +221,16 @@ export function createServer(): McpServer {
               : '(2022 개정 성취기준 DB에 없음 — 2015 개정 등 이전 교육과정 코드일 수 있음)',
           };
         }),
+        fulltextDocumentIds: linkedDocs.map((d) => d.id),
+        sourceGuide: {
+          note: '자료 원문 파일은 패키지에 포함되지 않습니다.',
+          fulltext: linkedDocs.length
+            ? `이 자료의 원문 텍스트가 연결되어 있습니다 — get_document_text(document_id: ${linkedDocs[0].id})로 본문을 읽을 수 있습니다.`
+            : 'search_fulltext로 제목·주제 키워드를 검색하면 관련 원문을 찾을 수 있습니다.',
+          findOriginal: `${r.office}교육청 자료실에서 "${r.collection}"을(를) 검색하세요.`,
+          webSearchUrl:
+            'https://www.google.com/search?q=' + encodeURIComponent(searchQuery),
+        },
       });
     }
   );
@@ -252,6 +269,188 @@ export function createServer(): McpServer {
             ? '직접 연계된 자료가 없습니다. search_resources로 성취기준의 핵심 키워드를 검색해 보세요.'
             : undefined,
       });
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // 도구 5: 원문 전문 검색
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    'search_fulltext',
+    {
+      title: '원문 전문 검색',
+      description:
+        `전국 시도교육청 환경교육 자료 PDF ${DOCUMENTS.length}건의 원문 텍스트(약 2.2만 청크)에서 본문 내용을 검색합니다. ` +
+        '메타데이터 검색(search_resources)으로 찾기 어려운 구체적 활동 방법, 실험 절차, 개념 설명, 사례를 찾을 때 사용하세요. ' +
+        '발췌가 잘려 있으면 get_document_text로 해당 문서의 전체 맥락을 이어 읽으세요. 첫 호출은 색인 구축으로 1~2초 걸립니다.',
+      inputSchema: {
+        query: z.string().describe('본문 검색 키워드 (예: "탄소발자국 계산 활동")'),
+        region: z.string().optional().describe('지역/교육청 필터 (예: "경기", "전국")'),
+        school_level: z
+          .enum(SCHOOL_LEVELS)
+          .optional()
+          .describe('학교급 필터'),
+        subject: z.string().optional().describe('과목 필터'),
+        limit: z.number().optional().describe('최대 결과 수 (기본 8, 최대 20)'),
+      },
+    },
+    async (args) => {
+      const lim = Math.max(1, Math.min(20, Math.floor(args.limit ?? 8)));
+      const filter =
+        args.region || args.school_level || args.subject
+          ? (doc: (typeof DOCUMENTS)[number]) => {
+              if (args.region && !doc.region.includes(args.region)) return false;
+              if (args.school_level && !doc.schoolLevel.includes(args.school_level))
+                return false;
+              if (
+                args.subject &&
+                !doc.subjects.some((s) => s.includes(args.subject!))
+              )
+                return false;
+              return true;
+            }
+          : null;
+      const { totalChunks, hits } = searchFulltext(args.query, filter, lim);
+      if (hits.length === 0) {
+        return jsonResult({
+          total: 0,
+          hint: '결과가 없습니다. 키워드를 더 일반적인 표현으로 바꾸거나 필터를 제거해 보세요.',
+        });
+      }
+      return jsonResult({
+        totalMatchingChunks: totalChunks,
+        showing: hits.length,
+        items: hits.map((h) => ({
+          documentId: h.doc.id,
+          fileName: h.doc.fileName,
+          region: h.doc.region,
+          schoolLevel: h.doc.schoolLevel,
+          subjects: h.doc.subjects,
+          resourceType: h.doc.resourceType,
+          chunkIndex: h.chunkIndex,
+          excerpt: h.excerpt,
+        })),
+        hint: '더 읽으려면 get_document_text(document_id, from_chunk)를 호출하세요.',
+      });
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // 도구 6: 원문 문서 읽기
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    'get_document_text',
+    {
+      title: '원문 문서 읽기',
+      description:
+        '원문 문서의 메타데이터와 본문 텍스트를 연속 청크 단위로 읽습니다. search_fulltext가 반환한 documentId로 호출하세요. ' +
+        'count 기본 5청크(약 3~4천 자), 최대 10청크씩 from_chunk를 늘려가며 이어 읽을 수 있습니다.',
+      inputSchema: {
+        document_id: z.number().describe('문서 id (search_fulltext 결과의 documentId)'),
+        from_chunk: z.number().optional().describe('시작 청크 번호 (기본 0)'),
+        count: z.number().optional().describe('읽을 청크 수 (기본 5, 최대 10)'),
+      },
+    },
+    async ({ document_id, from_chunk, count }) => {
+      const doc = DOC_BY_ID.get(document_id);
+      if (!doc) {
+        return jsonResult({
+          error: `document_id ${document_id}를 찾을 수 없습니다 (유효 범위: 1~${DOCUMENTS.length}).`,
+        });
+      }
+      const c = Math.max(1, Math.min(10, Math.floor(count ?? 5)));
+      const { totalChunks, parts } = getDocumentChunks(
+        document_id,
+        Math.max(0, Math.floor(from_chunk ?? 0)),
+        c
+      );
+      return jsonResult({
+        document: {
+          id: doc.id,
+          fileName: doc.fileName,
+          region: doc.region,
+          schoolLevel: doc.schoolLevel,
+          subjects: doc.subjects,
+          envTopics: doc.envTopics,
+          sdgs: doc.sdgs,
+          resourceType: doc.resourceType,
+          activityType: doc.activityType,
+          keywords: doc.keywords,
+          standards: doc.standards,
+          linkedResourceIds: doc.resourceIds,
+        },
+        totalChunks,
+        parts,
+        sourceGuide: `원문 PDF는 ${doc.region || '해당'} 교육청 자료실에서 "${doc.fileName.replace(/\.pdf$/i, '').replace(/_\d+$/, '')}"으로 검색하세요.`,
+      });
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // 도구 7: 환경주제 탐색
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    'explore_topics',
+    {
+      title: '환경주제 탐색',
+      description:
+        '환경주제 지도를 탐색합니다. topic 없이 호출하면 전체 주제 목록과 자료 수를, topic을 주면 관련 주제·SDGs·역량·과목·대표 성취기준·연관 키워드·추천 자료를 보여줍니다. ' +
+        '교사가 무엇이 있는지 둘러보거나 수업 아이디어를 확장할 때 사용하세요.',
+      inputSchema: {
+        topic: z
+          .string()
+          .optional()
+          .describe('탐색할 환경주제 (예: "자원순환", "생태전환"). 생략 시 전체 목록'),
+      },
+    },
+    async ({ topic }) => {
+      if (!topic || !topic.trim()) {
+        return jsonResult({
+          topics: listTopics(),
+          hint: 'topic 인자로 특정 주제를 탐색하세요.',
+        });
+      }
+      const result = exploreTopic(topic.trim());
+      if (result.matched.resources === 0 && result.matched.documents === 0) {
+        return jsonResult({
+          topic,
+          matched: result.matched,
+          hint: '이 주제로 태깅된 자료가 없습니다. explore_topics()로 전체 주제 목록을 확인하거나 search_fulltext로 본문 검색을 해보세요.',
+        });
+      }
+      return jsonResult(result);
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // 도구 8: 유사 자료 추천
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    'related_resources',
+    {
+      title: '유사 자료 추천',
+      description:
+        '특정 자료(resource_id) 또는 원문 문서(document_id)와 유사한 자료를 근거(공유 성취기준·주제·과목)와 함께 추천합니다. ' +
+        '교사가 어떤 자료를 마음에 들어 하며 "비슷한 것 더"를 원할 때 사용하세요.',
+      inputSchema: {
+        resource_id: z
+          .number()
+          .optional()
+          .describe('기준 자료 id (search_resources 결과)'),
+        document_id: z
+          .number()
+          .optional()
+          .describe('기준 문서 id (search_fulltext 결과)'),
+        limit: z.number().optional().describe('최대 추천 수 (기본 8, 최대 20)'),
+      },
+    },
+    async ({ resource_id, document_id, limit }) => {
+      const lim = Math.max(1, Math.min(20, Math.floor(limit ?? 8)));
+      const result = relatedItems(
+        { resourceId: resource_id, documentId: document_id },
+        lim
+      );
+      return jsonResult(result);
     }
   );
 

@@ -4,7 +4,7 @@
  * import.meta.url 기준 상대 경로가 동일하게 동작한다.
  */
 import { readFileSync } from 'node:fs';
-import type { Resource, Standard } from './types.js';
+import type { Doc, Resource, Standard } from './types.js';
 
 function loadJson<T>(relative: string): T {
   const url = new URL(relative, import.meta.url);
@@ -38,3 +38,21 @@ for (const r of RESOURCES) {
 export const RESOURCE_BY_ID: Map<number, Resource> = new Map(
   RESOURCES.map((r) => [r.id, r])
 );
+
+export const DOCUMENTS: Doc[] = loadJson<Doc[]>(
+  '../data/generated/documents.json'
+);
+
+export const DOC_BY_ID: Map<number, Doc> = new Map(
+  DOCUMENTS.map((d) => [d.id, d])
+);
+
+/** 정선 카탈로그 자료 id → 연결된 원문 문서 목록 */
+export const DOCS_BY_RESOURCE: Map<number, Doc[]> = new Map();
+for (const d of DOCUMENTS) {
+  for (const rid of d.resourceIds) {
+    const list = DOCS_BY_RESOURCE.get(rid);
+    if (list) list.push(d);
+    else DOCS_BY_RESOURCE.set(rid, [d]);
+  }
+}
