@@ -81,7 +81,38 @@ command = "npx"
 args = ["-y", "github:pblsketch/gepai-mcp"]
 ```
 
+### Cursor
+
+전역 `~/.cursor/mcp.json` 또는 프로젝트의 `.cursor/mcp.json`에 추가 (Cursor Settings → MCP → **Add new MCP Server** UI로도 가능):
+
+```json
+{
+  "mcpServers": {
+    "gepai": {
+      "command": "npx",
+      "args": ["-y", "github:pblsketch/gepai-mcp"]
+    }
+  }
+}
+```
+
+### Google Antigravity
+
+에이전트 패널의 설정(⚙) → **MCP Servers** → **View raw config**로 MCP 설정 파일을 열고 동일한 `mcpServers` 블록을 추가:
+
+```json
+{
+  "mcpServers": {
+    "gepai": {
+      "command": "npx",
+      "args": ["-y", "github:pblsketch/gepai-mcp"]
+    }
+  }
+}
+```
+
 > npm 배포 후에는 `github:pblsketch/gepai-mcp` 대신 `gepai-mcp`를 사용할 수 있습니다.
+> 위에 없는 도구라도 MCP를 지원한다면 같은 형식(`command: npx`, `args: [-y, github:pblsketch/gepai-mcp]`)으로 등록하면 됩니다.
 
 ## 사용 예
 
