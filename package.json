@@ -1,6 +1,6 @@
 {
   "name": "gepai-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "GEP-AI 환경교육 수업 설계 MCP 서버 — 2022 개정 교육과정 성취기준·전국 시도교육청 환경교육 자료 검색과 '배움의 수레바퀴' 수업 설계를 사용자의 AI(Claude/Gemini/ChatGPT)에서 바로 사용",
   "type": "module",
   "license": "MIT",

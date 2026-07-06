@@ -11,9 +11,13 @@ import { searchResources, searchStandards } from './search.js';
 import { renderWheelMarkdown } from './learning-wheel.js';
 import { buildDesignLessonPrompt } from './prompts/design-lesson.js';
 import { buildWheelGuidePrompt } from './prompts/learning-wheel-guide.js';
+import { buildContextInterviewPrompt } from './prompts/context-interview.js';
+import { buildLocalPblPrompt } from './prompts/local-pbl-coach.js';
+import { buildReflectLessonPrompt } from './prompts/reflect-lesson.js';
+import { buildLessonBriefPrompt } from './prompts/lesson-brief.js';
 import type { Resource } from './types.js';
 
-export const SERVER_VERSION = '0.1.0';
+export const SERVER_VERSION = '0.2.0';
 
 const SCHOOL_LEVELS = ['유치원', '초등학교', '중학교', '고등학교'] as const;
 
@@ -278,6 +282,91 @@ export function createServer(): McpServer {
             type: 'text' as const,
             text: buildDesignLessonPrompt(args),
           },
+        },
+      ],
+    })
+  );
+
+  server.registerPrompt(
+    'context_interview',
+    {
+      title: '맥락 인터뷰 (딸깍 방지)',
+      description:
+        '자료를 바로 만들지 않고 수업 의도·학생 맥락·교실/학교/지역 맥락·평가 증거·예상 오개념을 한 번에 하나씩 질문하는 인터뷰를 시작합니다. 수업 설계 전 공유된 이해를 만들 때 사용하세요.',
+      argsSchema: {
+        topic: z.string().optional().describe('환경 주제 (예: "기후변화")'),
+        school_level: z.string().optional().describe('학교급'),
+      },
+    },
+    (args) => ({
+      messages: [
+        {
+          role: 'user' as const,
+          content: {
+            type: 'text' as const,
+            text: buildContextInterviewPrompt(args),
+          },
+        },
+      ],
+    })
+  );
+
+  server.registerPrompt(
+    'local_pbl_coach',
+    {
+      title: '학교·지역 환경 PBL 코치',
+      description:
+        '학교와 지역사회의 실제 환경 문제를 기반으로 driving question, 학생 역할·청중, 프로젝트 흐름, 과정 평가가 연결된 프로젝트 학습(PBL)을 설계합니다.',
+      argsSchema: {
+        problem: z
+          .string()
+          .optional()
+          .describe('잠정 문제 (예: "급식 음식물 쓰레기")'),
+        school_level: z.string().optional().describe('학교급'),
+        region: z.string().optional().describe('지역/시도 (예: "충북")'),
+      },
+    },
+    (args) => ({
+      messages: [
+        {
+          role: 'user' as const,
+          content: { type: 'text' as const, text: buildLocalPblPrompt(args) },
+        },
+      ],
+    })
+  );
+
+  server.registerPrompt(
+    'reflect_lesson',
+    {
+      title: '수업 성찰·다음 차시 개선',
+      description:
+        '실행한 수업이 기대와 달랐을 때, 관찰 가능한 증거로 원인을 진단하고(반증 가능한 가설) 다음 차시의 최소 수정안을 만듭니다. 수레바퀴의 다음 순환을 준비합니다.',
+      argsSchema: {},
+    },
+    () => ({
+      messages: [
+        {
+          role: 'user' as const,
+          content: { type: 'text' as const, text: buildReflectLessonPrompt() },
+        },
+      ],
+    })
+  );
+
+  server.registerPrompt(
+    'lesson_brief',
+    {
+      title: '수업 설계 브리프 정리',
+      description:
+        '지금까지의 설계 대화를 새 질문 없이 한 페이지 브리프로 정리합니다 (미확정 항목 표시, 동료 공유·다음 AI 작업 인계용).',
+      argsSchema: {},
+    },
+    () => ({
+      messages: [
+        {
+          role: 'user' as const,
+          content: { type: 'text' as const, text: buildLessonBriefPrompt() },
         },
       ],
     })

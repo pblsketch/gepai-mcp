@@ -126,10 +126,39 @@ check(
 
 // 8. 프롬프트
 const prompts = await client.listPrompts();
+const promptNames = prompts.prompts.map((p) => p.name).sort();
 check(
-  'prompts: design_lesson + learning_wheel_guide',
-  prompts.prompts.length === 2,
-  prompts.prompts.map((p) => p.name).join(',')
+  'prompts: 6개 등록',
+  JSON.stringify(promptNames) ===
+    JSON.stringify([
+      'context_interview',
+      'design_lesson',
+      'learning_wheel_guide',
+      'lesson_brief',
+      'local_pbl_coach',
+      'reflect_lesson',
+    ]),
+  promptNames.join(',')
+);
+const ci = await client.getPrompt({
+  name: 'context_interview',
+  arguments: { topic: '플라스틱' },
+});
+const ciText = (ci.messages[0].content as { text: string }).text;
+check(
+  'context_interview: 딸깍 방지 원칙 + 인자 반영',
+  ciText.includes('딸깍') && ciText.includes('플라스틱') && ciText.includes('한 번에 하나'),
+  `len=${ciText.length}`
+);
+const pbl = await client.getPrompt({
+  name: 'local_pbl_coach',
+  arguments: { problem: '음식물 쓰레기', region: '충북' },
+});
+const pblText = (pbl.messages[0].content as { text: string }).text;
+check(
+  'local_pbl_coach: driving question + 지역 반영',
+  pblText.includes('driving question') && pblText.includes('충북'),
+  `len=${pblText.length}`
 );
 const dp = await client.getPrompt({
   name: 'design_lesson',
