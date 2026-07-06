@@ -43,6 +43,8 @@ export interface Doc {
   gcsUri: string;
   /** 연결된 정선 카탈로그 자료 id */
   resourceIds: number[];
+  /** 자료집 원본 페이지 URL (연결된 정선 카탈로그에서 전파) */
+  link?: string;
 }
 
 /** 교육부 자원맵 환경교육 자료 */
@@ -78,4 +80,6 @@ export interface Resource {
   methods: string[];
   /** 연계 성취기준 */
   standards: StandardRef[];
+  /** 자료집 원본 페이지 URL (교육청 자료실/환경교육포털 등, 자료집 단위) */
+  link?: string;
 }

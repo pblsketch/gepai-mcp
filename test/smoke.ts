@@ -187,8 +187,33 @@ check(
 // 상세 조회에 sourceGuide 포함 확인
 check(
   'get_resource_detail: sourceGuide 포함',
-  detailJson.sourceGuide?.findOriginal?.includes('교육청'),
+  detailJson.sourceGuide?.findOriginal?.includes('교육청') ||
+    detailJson.sourceGuide?.findOriginal?.includes('http'),
   JSON.stringify(detailJson.sourceGuide ?? null).slice(0, 80)
+);
+
+// 원본 링크: 수집된 자료집 링크가 자료에 연결되어 노출되는지
+const linkedSearch = await client.callTool({
+  name: 'search_resources',
+  arguments: { query: '로컬 환경수업', office: '경기', limit: 20 },
+});
+const linkedJson = JSON.parse(firstText(linkedSearch));
+check(
+  'search_resources: 원본 링크(link) 노출',
+  linkedJson.items?.some(
+    (i: { link?: string }) => i.link && i.link.startsWith('https://')
+  ),
+  `links=${linkedJson.items?.filter((i: { link?: string }) => i.link).length}/${linkedJson.items?.length}`
+);
+const ftLinked = await client.callTool({
+  name: 'search_fulltext',
+  arguments: { query: '탄소중립 실천', region: '경기', limit: 10 },
+});
+const ftLinkedJson = JSON.parse(firstText(ftLinked));
+check(
+  'search_fulltext: 문서에도 링크 전파',
+  ftLinkedJson.items?.some((i: { link?: string }) => i.link),
+  `links=${ftLinkedJson.items?.filter((i: { link?: string }) => i.link).length}/${ftLinkedJson.items?.length}`
 );
 
 // 8. 프롬프트

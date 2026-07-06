@@ -97,6 +97,22 @@ const standards = standardRows
 // 2. 자원맵 카탈로그 (resource catalog)
 // ---------------------------------------------------------------------------
 
+/** 자료집 원본 링크 (수집·검증된 것만, data/source/collection-links.json) */
+interface CollectionLink {
+  office: string;
+  collection: string;
+  url: string | null;
+  verified?: boolean;
+  confidence?: string;
+}
+const collectionLinks: CollectionLink[] = JSON.parse(
+  readFileSync(src('collection-links.json'), 'utf-8')
+);
+const linkByKey = new Map<string, string>();
+for (const l of collectionLinks) {
+  if (l.url) linkByKey.set(`${l.office}|${l.collection}`, l.url);
+}
+
 const catalogCsv = readFileSync(src('resource-catalog.csv'), 'utf-8');
 const catalogRows: Record<string, string>[] = parse(catalogCsv, {
   columns: true,
@@ -125,6 +141,7 @@ const resources = catalogRows
     sdgs: splitMulti(r['SDGs목표']),
     methods: splitMulti(r['교수학습방법']),
     standards: parseStandardRefs(r['성취기준']),
+    link: linkByKey.get(`${(r['시도교육청'] ?? '').trim()}|${(r['자료명'] ?? '').trim()}`),
   }));
 
 // ---------------------------------------------------------------------------
@@ -155,6 +172,7 @@ console.log(
 );
 console.log(`  과목 수: ${new Set(standards.map((s) => s.subject)).size}`);
 console.log(`자료: ${resources.length}건 (${new Set(resources.map((r) => r.office)).size}개 교육청)`);
+console.log(`  원본 링크: 자료집 ${linkByKey.size}개 수집됨 → 자료 ${resources.filter((r) => r.link).length}건에 연결`);
 console.log(
   `  성취기준 연결 자료: ${resourcesWithStandards.length}건, 참조 ${linkedRefs.length}건 중 성취기준 DB 매칭 ${matchedRefs.length}건 (${Math.round((matchedRefs.length / Math.max(linkedRefs.length, 1)) * 100)}%)`
 );

@@ -22,7 +22,7 @@ import { buildReflectLessonPrompt } from './prompts/reflect-lesson.js';
 import { buildLessonBriefPrompt } from './prompts/lesson-brief.js';
 import type { Resource } from './types.js';
 
-export const SERVER_VERSION = '0.3.0';
+export const SERVER_VERSION = '0.4.0';
 
 const SCHOOL_LEVELS = ['유치원', '초등학교', '중학교', '고등학교'] as const;
 
@@ -43,6 +43,7 @@ function resourceSummary(r: Resource) {
     place: r.place || undefined,
     activityTypes: r.activityTypes,
     standardCodes: r.standards.map((s) => s.code),
+    link: r.link,
   };
 }
 
@@ -224,10 +225,13 @@ export function createServer(): McpServer {
         fulltextDocumentIds: linkedDocs.map((d) => d.id),
         sourceGuide: {
           note: '자료 원문 파일은 패키지에 포함되지 않습니다.',
+          directUrl: r.link,
           fulltext: linkedDocs.length
             ? `이 자료의 원문 텍스트가 연결되어 있습니다 — get_document_text(document_id: ${linkedDocs[0].id})로 본문을 읽을 수 있습니다.`
             : 'search_fulltext로 제목·주제 키워드를 검색하면 관련 원문을 찾을 수 있습니다.',
-          findOriginal: `${r.office}교육청 자료실에서 "${r.collection}"을(를) 검색하세요.`,
+          findOriginal: r.link
+            ? `원본 자료집 페이지: ${r.link}`
+            : `${r.office}교육청 자료실에서 "${r.collection}"을(를) 검색하세요.`,
           webSearchUrl:
             'https://www.google.com/search?q=' + encodeURIComponent(searchQuery),
         },
@@ -329,6 +333,7 @@ export function createServer(): McpServer {
           resourceType: h.doc.resourceType,
           chunkIndex: h.chunkIndex,
           excerpt: h.excerpt,
+          link: h.doc.link,
         })),
         hint: '더 읽으려면 get_document_text(document_id, from_chunk)를 호출하세요.',
       });
@@ -381,7 +386,9 @@ export function createServer(): McpServer {
         },
         totalChunks,
         parts,
-        sourceGuide: `원문 PDF는 ${doc.region || '해당'} 교육청 자료실에서 "${doc.fileName.replace(/\.pdf$/i, '').replace(/_\d+$/, '')}"으로 검색하세요.`,
+        sourceGuide: doc.link
+          ? `원본 자료집 페이지: ${doc.link}`
+          : `원문 PDF는 ${doc.region || '해당'} 교육청 자료실에서 "${doc.fileName.replace(/\.pdf$/i, '').replace(/_\d+$/, '')}"으로 검색하세요.`,
       });
     }
   );

@@ -82,7 +82,11 @@ const rawDocs = readFileSync(p('data', 'source', 'rag_documents.jsonl'), 'utf-8'
 
 const resources = JSON.parse(
   readFileSync(p('data', 'generated', 'resources.json'), 'utf-8')
-) as { id: number; title: string }[];
+) as { id: number; title: string; link?: string }[];
+
+const linkByResourceId = new Map(
+  resources.filter((r) => r.link).map((r) => [r.id, r.link as string])
+);
 
 const resourceByStem = new Map<string, number[]>();
 for (const r of resources) {
@@ -118,6 +122,7 @@ const documents = rawDocs.map((d, i) => {
     standards: parseStandardRefs(d.achievements),
     gcsUri: String(d.gcs_uri ?? ''),
     resourceIds,
+    link: resourceIds.map((rid) => linkByResourceId.get(rid)).find(Boolean),
   };
 });
 
@@ -138,6 +143,7 @@ console.log('=== build-documents 완료 ===');
 console.log(`문서: ${documents.length}건`);
 console.log(`  region: ${withRegion.length}, envTopics: ${withTopics.length}, standards: ${withStandards.length}, keywords: ${documents.filter((d) => d.keywords.length).length}`);
 console.log(`  정선 카탈로그와 연결(resourceIds): ${linked.length}건`);
+console.log(`  원본 링크 전파: ${documents.filter((d) => d.link).length}건`);
 console.log(
   `  region 분포: ${[...new Set(documents.map((d) => d.region))].filter(Boolean).join(', ')}`
 );
