@@ -77,6 +77,17 @@ https://gepai-mcp.vercel.app
 
 > Gemini CLI는 Antigravity와 반대로 `httpUrl` 키를 씁니다. 헷갈리기 쉬우니 주의!
 
+### A-5. Codex (CLI · IDE 확장 · 데스크톱 앱 공통)
+
+`~/.codex/config.toml` 에 아래 두 줄을 추가하면 됩니다. CLI·IDE 확장·데스크톱 앱(Windows·macOS)이 모두 이 파일 하나를 공유하므로 한 번만 등록하면 됩니다:
+
+```toml
+[mcp_servers.gepai]
+url = "https://gepai-mcp.vercel.app"
+```
+
+> 로컬 설치(`npx`) 방식을 원하면 아래 **B-3**을 보세요. URL 방식은 Node.js가 필요 없습니다.
+
 ---
 
 ## 방법 B — 내 컴퓨터에 설치하기
@@ -127,7 +138,7 @@ claude mcp add gepai -- npx -y gepai-mcp
 3. Claude Desktop을 **완전히 종료**(Windows는 작업 표시줄 트레이 아이콘에서 종료)한 뒤 다시 실행합니다.
 4. **확인:** 채팅창 아래 도구(🔧/⚙) 아이콘을 눌렀을 때 `gepai` 가 보이면 성공입니다.
 
-### B-3. OpenAI Codex (CLI · IDE 확장)
+### B-3. OpenAI Codex (CLI · IDE 확장 · 데스크톱 앱)
 
 **CLI — 터미널에 한 줄** (공식 문서의 `codex mcp add` 명령):
 
@@ -135,7 +146,7 @@ claude mcp add gepai -- npx -y gepai-mcp
 codex mcp add gepai -- npx -y gepai-mcp
 ```
 
-또는 `~/.codex/config.toml` 에 직접 추가:
+또는 `~/.codex/config.toml` 에 직접 추가 — CLI·IDE 확장·데스크톱 앱(Windows·macOS)이 모두 이 설정 파일을 공유합니다:
 
 ```toml
 [mcp_servers.gepai]
