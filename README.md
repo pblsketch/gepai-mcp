@@ -167,16 +167,28 @@ Antigravity 제품군은 통합 MCP 설정 파일 하나를 CLI와 IDE가 공유
 - "플라스틱 주제로 쓸 수 있는 교육청 자료가 있어?"
 - "[6과05-03] 성취기준과 연계된 자료를 보여줘"
 
-## 원격(HTTP) 모드
+## 원격 MCP — 설치 없이 URL 등록 (교사 추천)
 
-조직 공용 서버로 띄우려면:
+Node.js 설치가 어렵다면 공용 서버 URL을 등록하기만 하면 됩니다:
+
+**`https://gepai-mcp.vercel.app`**
+
+| 플랫폼 | 등록 방법 |
+|---|---|
+| Claude (웹·데스크톱) | 설정 → 커넥터 → **커스텀 커넥터 추가** → 위 URL 입력 |
+| ChatGPT | 설정 → 커넥터 (개발자 모드) → 새 커넥터 → 위 URL |
+| Gemini CLI | `~/.gemini/settings.json`의 mcpServers에 `"gepai": { "httpUrl": "https://gepai-mcp.vercel.app" }` |
+| Google Antigravity | `~/.gemini/config/mcp_config.json`에 `"gepai": { "serverUrl": "https://gepai-mcp.vercel.app" }` |
+
+검색만 수행하고 LLM을 호출하지 않으므로 무료 티어로 운영됩니다.
+
+### 직접 호스팅
 
 ```bash
 npx gepai-mcp --http --port 3737
 # 헬스 체크: GET /healthz, MCP 엔드포인트: POST /
+# PORT 환경변수가 있으면(Vercel 등 서버 플랫폼) 자동으로 HTTP 모드로 기동합니다
 ```
-
-검색만 수행하고 LLM을 호출하지 않으므로 무료 티어 수준의 서버로 충분합니다.
 
 ## 개발
 
@@ -204,7 +216,7 @@ src/prompts/     수업 설계 절차 프롬프트
 ## 로드맵
 
 - [x] npm 패키지 배포 (`npx gepai-mcp`) — [gepai-mcp@0.1.0](https://www.npmjs.com/package/gepai-mcp)
-- [ ] 원격 MCP 배포 (Cloudflare Workers) — 교사가 URL 등록만으로 사용
+- [x] 원격 MCP 배포 — https://gepai-mcp.vercel.app (Vercel, 교사가 URL 등록만으로 사용)
 - [x] 자료 원문 심층 검색 — v0.3.0: 원문 22,341청크 내장 BM25 전문 검색 (임베딩 불필요, 의미 재랭킹은 호출하는 AI가 수행)
 - [x] 자료 원본 링크 1차 확보 — v0.4.0: 자료집 41개의 공식 페이지 URL(교육청 자료실·웹진·전자책, 전수 웹 검증) → 자료 517건·문서 487건에 연결. 나머지는 웹 미게시 자료가 다수(내부 자료실 전용·보도만 존재)로, 검증된 링크만 채택하고 미확보분은 검색 안내로 대체
 - [ ] 원본 링크 커버리지 확대 (미게시 자료는 교육청 협조 필요)

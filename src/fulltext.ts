@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { brotliDecompressSync } from 'node:zlib';
 import type { Doc } from './types.js';
-import { DOC_BY_ID } from './data.js';
+import { DOC_BY_ID, resolveDataFile } from './data.js';
 
 interface ChunkRec {
   d: number; // document id
@@ -39,8 +39,9 @@ function tokenizeRaw(text: string): string[] {
 
 function ensureLoaded(): void {
   if (chunks) return;
-  const url = new URL('../data/generated/chunks.jsonl.br', import.meta.url);
-  const raw = brotliDecompressSync(readFileSync(url)).toString('utf-8');
+  const raw = brotliDecompressSync(
+    readFileSync(resolveDataFile('chunks.jsonl.br'))
+  ).toString('utf-8');
   chunks = raw
     .split('\n')
     .filter((l) => l)

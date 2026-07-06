@@ -17,16 +17,38 @@ if (args.includes('--version') || args.includes('-v')) {
   process.exit(0);
 }
 
-if (args.includes('--http')) {
+// Vercel 등 서버 플랫폼(PORT 환경변수 제공)에서는 자동으로 HTTP 모드
+const isServerPlatform = !!process.env.VERCEL || !!process.env.PORT;
+
+if (args.includes('--http') || (isServerPlatform && !args.includes('--stdio'))) {
   const portIdx = args.indexOf('--port');
   const port =
-    portIdx >= 0 && args[portIdx + 1] ? Number(args[portIdx + 1]) : 3737;
+    portIdx >= 0 && args[portIdx + 1]
+      ? Number(args[portIdx + 1])
+      : process.env.PORT
+        ? Number(process.env.PORT)
+        : 3737;
 
   const httpServer = createHttpServer(async (req, res) => {
     try {
       if (req.method === 'GET' && req.url === '/healthz') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'ok', server: 'gepai-mcp', version: SERVER_VERSION }));
+        return;
+      }
+      if (req.method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(
+          JSON.stringify({
+            name: 'gepai-mcp',
+            version: SERVER_VERSION,
+            description:
+              'GEP-AI 환경교육 수업 설계 MCP 서버 (원격). 이 URL을 Claude/ChatGPT 커넥터 또는 Gemini CLI에 MCP 서버로 등록하세요.',
+            protocol: 'MCP Streamable HTTP (stateless)',
+            usage: '이 엔드포인트로 JSON-RPC POST',
+            docs: 'https://github.com/pblsketch/gepai-mcp',
+          })
+        );
         return;
       }
       if (req.method !== 'POST') {

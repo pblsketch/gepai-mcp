@@ -22,7 +22,7 @@ import { buildReflectLessonPrompt } from './prompts/reflect-lesson.js';
 import { buildLessonBriefPrompt } from './prompts/lesson-brief.js';
 import type { Resource } from './types.js';
 
-export const SERVER_VERSION = '0.4.0';
+export const SERVER_VERSION = '0.4.1';
 
 const SCHOOL_LEVELS = ['유치원', '초등학교', '중학교', '고등학교'] as const;
 

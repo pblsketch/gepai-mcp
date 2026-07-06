@@ -3,21 +3,30 @@
  * src/(개발)과 dist/(빌드) 모두 패키지 루트의 data/와 형제 관계이므로
  * import.meta.url 기준 상대 경로가 동일하게 동작한다.
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import type { Doc, Resource, Standard } from './types.js';
 
-function loadJson<T>(relative: string): T {
-  const url = new URL(relative, import.meta.url);
-  return JSON.parse(readFileSync(url, 'utf-8')) as T;
+/**
+ * 데이터 파일 경로 해석: 패키지 상대 경로 우선, 서버리스 번들 환경에서는
+ * 작업 디렉터리(cwd) 기준 data/generated 폴백 (Vercel includeFiles 대응).
+ */
+export function resolveDataFile(name: string): string {
+  const local = fileURLToPath(new URL(`../data/generated/${name}`, import.meta.url));
+  if (existsSync(local)) return local;
+  const cwdPath = path.join(process.cwd(), 'data', 'generated', name);
+  if (existsSync(cwdPath)) return cwdPath;
+  throw new Error(`데이터 파일을 찾을 수 없음: ${name} (tried: ${local}, ${cwdPath})`);
 }
 
-export const STANDARDS: Standard[] = loadJson<Standard[]>(
-  '../data/generated/standards.json'
-);
+function loadJson<T>(name: string): T {
+  return JSON.parse(readFileSync(resolveDataFile(name), 'utf-8')) as T;
+}
 
-export const RESOURCES: Resource[] = loadJson<Resource[]>(
-  '../data/generated/resources.json'
-);
+export const STANDARDS: Standard[] = loadJson<Standard[]>('standards.json');
+
+export const RESOURCES: Resource[] = loadJson<Resource[]>('resources.json');
 
 /** 성취기준 코드 → 성취기준 (중복 코드는 첫 항목 우선) */
 export const STANDARD_BY_CODE: Map<string, Standard> = new Map();
@@ -39,9 +48,7 @@ export const RESOURCE_BY_ID: Map<number, Resource> = new Map(
   RESOURCES.map((r) => [r.id, r])
 );
 
-export const DOCUMENTS: Doc[] = loadJson<Doc[]>(
-  '../data/generated/documents.json'
-);
+export const DOCUMENTS: Doc[] = loadJson<Doc[]>('documents.json');
 
 export const DOC_BY_ID: Map<number, Doc> = new Map(
   DOCUMENTS.map((d) => [d.id, d])
