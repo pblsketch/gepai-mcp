@@ -96,9 +96,9 @@ args = ["-y", "github:pblsketch/gepai-mcp"]
 }
 ```
 
-### Google Antigravity
+### Google Antigravity (CLI · IDE)
 
-에이전트 패널의 설정(⚙) → **MCP Servers** → **View raw config**로 MCP 설정 파일을 열고 동일한 `mcpServers` 블록을 추가:
+Antigravity 제품군은 통합 MCP 설정 파일 하나를 CLI와 IDE가 공유합니다: `~/.gemini/config/mcp_config.json`
 
 ```json
 {
@@ -110,6 +110,9 @@ args = ["-y", "github:pblsketch/gepai-mcp"]
   }
 }
 ```
+
+- **CLI**: 프로젝트 단위로 쓰려면 저장소 루트에 `.agents/mcp_config.json`을 두면 됩니다. 터미널에서 `/mcp` 명령으로 등록된 서버를 확인·관리할 수 있습니다.
+- **IDE**: MCP 스토어 상단 **Manage MCP Servers** → **View raw config**로 같은 파일을 열어 편집할 수 있습니다.
 
 > npm 배포 후에는 `github:pblsketch/gepai-mcp` 대신 `gepai-mcp`를 사용할 수 있습니다.
 > 위에 없는 도구라도 MCP를 지원한다면 같은 형식(`command: npx`, `args: [-y, github:pblsketch/gepai-mcp]`)으로 등록하면 됩니다.
