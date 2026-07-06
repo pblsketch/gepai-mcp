@@ -38,7 +38,7 @@ Node.js 18 이상이 필요합니다.
 ### Claude Code
 
 ```bash
-claude mcp add gepai -- npx -y github:pblsketch/gepai-mcp
+claude mcp add gepai -- npx -y gepai-mcp
 ```
 
 ### Claude Desktop
@@ -50,7 +50,7 @@ claude mcp add gepai -- npx -y github:pblsketch/gepai-mcp
   "mcpServers": {
     "gepai": {
       "command": "npx",
-      "args": ["-y", "github:pblsketch/gepai-mcp"]
+      "args": ["-y", "gepai-mcp"]
     }
   }
 }
@@ -65,7 +65,7 @@ claude mcp add gepai -- npx -y github:pblsketch/gepai-mcp
   "mcpServers": {
     "gepai": {
       "command": "npx",
-      "args": ["-y", "github:pblsketch/gepai-mcp"]
+      "args": ["-y", "gepai-mcp"]
     }
   }
 }
@@ -78,7 +78,7 @@ claude mcp add gepai -- npx -y github:pblsketch/gepai-mcp
 ```toml
 [mcp_servers.gepai]
 command = "npx"
-args = ["-y", "github:pblsketch/gepai-mcp"]
+args = ["-y", "gepai-mcp"]
 ```
 
 ### Cursor
@@ -90,7 +90,7 @@ args = ["-y", "github:pblsketch/gepai-mcp"]
   "mcpServers": {
     "gepai": {
       "command": "npx",
-      "args": ["-y", "github:pblsketch/gepai-mcp"]
+      "args": ["-y", "gepai-mcp"]
     }
   }
 }
@@ -105,7 +105,7 @@ Antigravity 제품군은 통합 MCP 설정 파일 하나를 CLI와 IDE가 공유
   "mcpServers": {
     "gepai": {
       "command": "npx",
-      "args": ["-y", "github:pblsketch/gepai-mcp"]
+      "args": ["-y", "gepai-mcp"]
     }
   }
 }
@@ -114,8 +114,7 @@ Antigravity 제품군은 통합 MCP 설정 파일 하나를 CLI와 IDE가 공유
 - **CLI**: 프로젝트 단위로 쓰려면 저장소 루트에 `.agents/mcp_config.json`을 두면 됩니다. 터미널에서 `/mcp` 명령으로 등록된 서버를 확인·관리할 수 있습니다.
 - **IDE**: MCP 스토어 상단 **Manage MCP Servers** → **View raw config**로 같은 파일을 열어 편집할 수 있습니다.
 
-> npm 배포 후에는 `github:pblsketch/gepai-mcp` 대신 `gepai-mcp`를 사용할 수 있습니다.
-> 위에 없는 도구라도 MCP를 지원한다면 같은 형식(`command: npx`, `args: [-y, github:pblsketch/gepai-mcp]`)으로 등록하면 됩니다.
+> 위에 없는 도구라도 MCP를 지원한다면 같은 형식(`command: npx`, `args: [-y, gepai-mcp]`)으로 등록하면 됩니다.
 
 ## 사용 예
 
@@ -162,7 +161,7 @@ src/prompts/     수업 설계 절차 프롬프트
 
 ## 로드맵
 
-- [ ] npm 패키지 배포 (`npx gepai-mcp`)
+- [x] npm 패키지 배포 (`npx gepai-mcp`) — [gepai-mcp@0.1.0](https://www.npmjs.com/package/gepai-mcp)
 - [ ] 원격 MCP 배포 (Cloudflare Workers) — 교사가 URL 등록만으로 사용
 - [ ] 자료 원문 PDF 심층 검색 (사전 임베딩 + 로컬 벡터 검색)
 - [ ] 플랫폼별 설치 가이드 (스크린샷 포함)
