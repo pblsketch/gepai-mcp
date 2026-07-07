@@ -73,12 +73,37 @@ function stem(name: string): string {
     .toLowerCase();
 }
 
+/** 공개 부적합 제외 목록: 개별 학교 제출 행정 보고서·정산서 (Drive 보관소에서도 삭제됨) */
+function isExcluded(fileName: string): boolean {
+  return (
+    fileName.startsWith('충남_2023_자연생태학습장 구축_') ||
+    fileName.startsWith('충남_학교숲 조성 사업_') ||
+    fileName.includes('조성사업_부여_송간초등학교')
+  );
+}
+
 // --- 입력 로드 -------------------------------------------------------------
 
-const rawDocs = readFileSync(p('data', 'source', 'rag_documents.jsonl'), 'utf-8')
+const allRawDocs = readFileSync(p('data', 'source', 'rag_documents.jsonl'), 'utf-8')
   .split('\n')
   .filter((l) => l.trim())
   .map((l) => JSON.parse(l) as Record<string, unknown>);
+
+const rawDocs = allRawDocs.filter((d) => !isExcluded(String(d.file_name ?? '')));
+const excludedCount = allRawDocs.length - rawDocs.length;
+
+/** 원문 PDF Drive 직링크: data/source/drive-links.json ({t: 파일명, u: URL}[]) */
+const driveLinks: { t: string; u: string }[] = JSON.parse(
+  readFileSync(p('data', 'source', 'drive-links.json'), 'utf-8')
+);
+const driveByName = new Map<string, string>();
+const driveByStem = new Map<string, string>();
+for (const l of driveLinks) {
+  if (!l.t || !l.u) continue;
+  if (!driveByName.has(l.t)) driveByName.set(l.t, l.u);
+  const s = stem(l.t);
+  if (!driveByStem.has(s)) driveByStem.set(s, l.u);
+}
 
 const resources = JSON.parse(
   readFileSync(p('data', 'generated', 'resources.json'), 'utf-8')
@@ -123,6 +148,7 @@ const documents = rawDocs.map((d, i) => {
     gcsUri: String(d.gcs_uri ?? ''),
     resourceIds,
     link: resourceIds.map((rid) => linkByResourceId.get(rid)).find(Boolean),
+    fileUrl: driveByName.get(fileName) ?? driveByStem.get(stem(fileName)),
   };
 });
 
@@ -140,7 +166,8 @@ const linked = documents.filter((d) => d.resourceIds.length > 0);
 writeFileSync(p('data', 'generated', 'documents.json'), JSON.stringify(documents), 'utf-8');
 
 console.log('=== build-documents 완료 ===');
-console.log(`문서: ${documents.length}건`);
+console.log(`문서: ${documents.length}건 (공개 부적합 ${excludedCount}건 제외)`);
+console.log(`  Drive 파일 링크: ${documents.filter((d) => d.fileUrl).length}건 (수집 ${driveLinks.length}건 중 매칭)`);
 console.log(`  region: ${withRegion.length}, envTopics: ${withTopics.length}, standards: ${withStandards.length}, keywords: ${documents.filter((d) => d.keywords.length).length}`);
 console.log(`  정선 카탈로그와 연결(resourceIds): ${linked.length}건`);
 console.log(`  원본 링크 전파: ${documents.filter((d) => d.link).length}건`);

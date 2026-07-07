@@ -45,6 +45,8 @@ export interface Doc {
   resourceIds: number[];
   /** 자료집 원본 페이지 URL (연결된 정선 카탈로그에서 전파) */
   link?: string;
+  /** 원문 PDF 파일 직링크 (Google Drive 보관소) */
+  fileUrl?: string;
 }
 
 /** 교육부 자원맵 환경교육 자료 */

@@ -44,6 +44,7 @@ function resourceSummary(r: Resource) {
     activityTypes: r.activityTypes,
     standardCodes: r.standards.map((s) => s.code),
     link: r.link,
+    fileUrl: DOCS_BY_RESOURCE.get(r.id)?.find((d) => d.fileUrl)?.fileUrl,
   };
 }
 
@@ -226,6 +227,7 @@ export function createServer(): McpServer {
         sourceGuide: {
           note: '자료 원문 파일은 패키지에 포함되지 않습니다.',
           directUrl: r.link,
+          driveFile: linkedDocs.find((d) => d.fileUrl)?.fileUrl,
           fulltext: linkedDocs.length
             ? `이 자료의 원문 텍스트가 연결되어 있습니다 — get_document_text(document_id: ${linkedDocs[0].id})로 본문을 읽을 수 있습니다.`
             : 'search_fulltext로 제목·주제 키워드를 검색하면 관련 원문을 찾을 수 있습니다.',
@@ -334,6 +336,7 @@ export function createServer(): McpServer {
           chunkIndex: h.chunkIndex,
           excerpt: h.excerpt,
           link: h.doc.link,
+          fileUrl: h.doc.fileUrl,
         })),
         hint: '더 읽으려면 get_document_text(document_id, from_chunk)를 호출하세요.',
       });
@@ -383,12 +386,15 @@ export function createServer(): McpServer {
           keywords: doc.keywords,
           standards: doc.standards,
           linkedResourceIds: doc.resourceIds,
+          fileUrl: doc.fileUrl,
         },
         totalChunks,
         parts,
-        sourceGuide: doc.link
-          ? `원본 자료집 페이지: ${doc.link}`
-          : `원문 PDF는 ${doc.region || '해당'} 교육청 자료실에서 "${doc.fileName.replace(/\.pdf$/i, '').replace(/_\d+$/, '')}"으로 검색하세요.`,
+        sourceGuide: doc.fileUrl
+          ? `원문 PDF 바로 열기: ${doc.fileUrl}${doc.link ? ` · 공식 자료집 페이지: ${doc.link}` : ''}`
+          : doc.link
+            ? `원본 자료집 페이지: ${doc.link}`
+            : `원문 PDF는 ${doc.region || '해당'} 교육청 자료실에서 "${doc.fileName.replace(/\.pdf$/i, '').replace(/_\d+$/, '')}"으로 검색하세요.`,
       });
     }
   );
