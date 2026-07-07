@@ -215,6 +215,34 @@ check(
   ftLinkedJson.items?.some((i: { link?: string }) => i.link),
   `links=${ftLinkedJson.items?.filter((i: { link?: string }) => i.link).length}/${ftLinkedJson.items?.length}`
 );
+// Drive 원문 파일 직링크
+const ftFile = await client.callTool({
+  name: 'search_fulltext',
+  arguments: { query: '생태전환', limit: 15 },
+});
+const ftFileJson = JSON.parse(firstText(ftFile));
+check(
+  'search_fulltext: Drive 원문 파일링크(fileUrl) 노출',
+  ftFileJson.items?.some(
+    (i: { fileUrl?: string }) =>
+      i.fileUrl && i.fileUrl.includes('drive.google.com')
+  ),
+  `fileUrls=${ftFileJson.items?.filter((i: { fileUrl?: string }) => i.fileUrl).length}/${ftFileJson.items?.length}`
+);
+const withFile = ftFileJson.items?.find((i: { documentId: number; fileUrl?: string }) => i.fileUrl);
+if (withFile) {
+  const dt = await client.callTool({
+    name: 'get_document_text',
+    arguments: { document_id: withFile.documentId, count: 1 },
+  });
+  const dtJson = JSON.parse(firstText(dt));
+  check(
+    'get_document_text: sourceGuide에 원문 바로 열기 링크',
+    dtJson.sourceGuide?.includes('drive.google.com') &&
+      dtJson.document?.fileUrl?.includes('drive.google.com'),
+    String(dtJson.sourceGuide).slice(0, 60)
+  );
+}
 
 // 8. 프롬프트
 const prompts = await client.listPrompts();

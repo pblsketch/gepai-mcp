@@ -68,7 +68,8 @@
 - 지역: 14개 (경기 249 · 충북 144 · 서울 125 · 광주 98 등, "전국" 포함)
 - 본문 텍스트: 청크 22,341건 (평균 686자, brotli 압축 7.7MB 내장) — `search_fulltext`로 본문 검색, `get_document_text`로 이어 읽기
 - 정선 카탈로그(②)와 파일명 기준 742건 자동 연결 — 자료 상세에서 원문 텍스트로 바로 이동
-- 필드: `fileName`, `region`, `schoolLevel`, `subjects`, `envTopics`, `sdgs`, `competencies`, `methods`, `resourceType`, `activityType`, `keywords`(AI 생성), `standards`, `resourceIds`
+- **원문 PDF 직링크**: 1,053건 중 997건(95%)에 Google Drive 원문 파일 링크(`fileUrl`) 연결 — 검색된 자료를 클릭 한 번으로 열람. 나머지는 미공개/부분 업로드 자료로 공식 자료실 안내로 대체 (개별 학교 제출 행정보고서 60건은 개인정보 우려로 제외)
+- 필드: `fileName`, `region`, `schoolLevel`, `subjects`, `envTopics`, `sdgs`, `competencies`, `methods`, `resourceType`, `activityType`, `keywords`(AI 생성), `standards`, `resourceIds`, `fileUrl`(원문 PDF)
 
 **④ 배움의 수레바퀴 모형** — 이재영 교수가 경험학습 이론(Kolb)과 변혁적 학습 이론(Mezirow)을 환경교육 맥락으로 재구성한 학습 모형. **4단계**(감각과 체험 → 성찰과 발견 → 창작과 표현 → 참여와 실천)와 **4연결고리**(탐구·내면화·공유·사회화)의 8블록 순환 구조로, 단계별 예시 활동과 차시 수별 권장 구성을 포함 (`gepai://learning-wheel` 리소스로도 제공)
 
@@ -255,9 +256,9 @@ src/prompts/     수업 설계 절차 프롬프트
 - [x] npm 패키지 배포 (`npx gepai-mcp`) — [gepai-mcp@0.1.0](https://www.npmjs.com/package/gepai-mcp)
 - [x] 원격 MCP 배포 — https://gepai-mcp.vercel.app (Vercel, 교사가 URL 등록만으로 사용)
 - [x] 자료 원문 심층 검색 — v0.3.0: 원문 22,341청크 내장 BM25 전문 검색 (임베딩 불필요, 의미 재랭킹은 호출하는 AI가 수행)
-- [x] 자료 원본 링크 1차 확보 — v0.4.0: 자료집 41개의 공식 페이지 URL(교육청 자료실·웹진·전자책, 전수 웹 검증) → 자료 517건·문서 487건에 연결. 나머지는 웹 미게시 자료가 다수(내부 자료실 전용·보도만 존재)로, 검증된 링크만 채택하고 미확보분은 검색 안내로 대체
+- [x] 자료 원본 링크 1차 확보 — v0.4.0: 자료집 41개의 공식 페이지 URL(교육청 자료실·웹진·전자책, 전수 웹 검증) → 자료 517건·문서 487건에 연결
+- [x] 원문 PDF 직링크 — v0.5.0: 교육청 자료 PDF를 Google Drive 보관소에 게시하고 문서 997/1,053건(95%)에 파일 링크 연결 (개별 학교 제출 행정보고서 60건은 개인정보 우려로 제외, 미업로드 분할본 등 56건은 공식 자료실 안내로 대체)
 - [x] 플랫폼별 설치 가이드 — [docs/INSTALL.md](docs/INSTALL.md) (Claude·ChatGPT·Codex·Gemini·Antigravity·Cursor, 공식 문서 기준 검증)
-- [ ] 원본 링크 커버리지 확대 (미게시 자료는 교육청 협조 필요)
 - [ ] 설치 가이드 스크린샷 보강
 
 ---

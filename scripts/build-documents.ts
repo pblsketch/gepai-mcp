@@ -68,6 +68,7 @@ function parseStandardRefs(raw: unknown): { code: string; text: string }[] {
 
 function stem(name: string): string {
   return name
+    .normalize('NFC') // Drive/로컬 간 한글 자모 분해 차이 흡수
     .replace(/\.pdf$/i, '')
     .replace(/\s+/g, '')
     .toLowerCase();
@@ -100,7 +101,8 @@ const driveByName = new Map<string, string>();
 const driveByStem = new Map<string, string>();
 for (const l of driveLinks) {
   if (!l.t || !l.u) continue;
-  if (!driveByName.has(l.t)) driveByName.set(l.t, l.u);
+  const name = l.t.normalize('NFC');
+  if (!driveByName.has(name)) driveByName.set(name, l.u);
   const s = stem(l.t);
   if (!driveByStem.has(s)) driveByStem.set(s, l.u);
 }
@@ -148,7 +150,9 @@ const documents = rawDocs.map((d, i) => {
     gcsUri: String(d.gcs_uri ?? ''),
     resourceIds,
     link: resourceIds.map((rid) => linkByResourceId.get(rid)).find(Boolean),
-    fileUrl: driveByName.get(fileName) ?? driveByStem.get(stem(fileName)),
+    fileUrl:
+      driveByName.get(fileName.normalize('NFC')) ??
+      driveByStem.get(stem(fileName)),
   };
 });
 
